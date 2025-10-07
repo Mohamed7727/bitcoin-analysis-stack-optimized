@@ -79,7 +79,9 @@ class OptimizedBitcoinNeo4jImporter:
         # Connect to Redis for caching
         if self.enable_caching:
             try:
-                self.redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
+                redis_host = os.getenv('REDIS_HOST', 'redis')
+                redis_port = int(os.getenv('REDIS_PORT', '6379'))
+                self.redis_client = redis.Redis(host=redis_host, port=redis_port, db=0, decode_responses=True)
                 self.redis_client.ping()
                 logger.info("Connected to Redis cache")
             except Exception as e:
@@ -151,44 +153,6 @@ class OptimizedBitcoinNeo4jImporter:
             self.redis_client.setex(cache_key, 3600, json.dumps(block_data))  # 1 hour TTL
         except Exception as e:
             logger.warning(f"Cache write error: {e}")
-
-    def import_block_batch(self, start_height: int, end_height: int):
-        """Import multiple blocks in a single transaction (optimized)"""
-        blocks_data = []
-
-        # Fetch all blocks
-        for height in range(start_height, end_height):
-            try:
-                block_hash = self.btc.getblockhash(height)
-                block = self.btc.getblock(block_hash, 2)  # Verbosity 2 includes tx details
-                blocks_data.append(block)
-            except Exception as e:
-                logger.error(f"Error fetching block {height}: {e}")
-                continue
-
-        # Import all blocks in a single Neo4j transaction
-        with self.neo4j.session() as session:
-            with session.begin_transaction() as tx:
-                for block in blocks_data:
-                    self._import_block_data(tx, block)
-                tx.commit()
-
-    def _import_block_data(self, tx, block: Dict):
-        """Import a single block's data within a transaction"""
-        # Import block
-        tx.run("""
-            MERGE (b:Block {hash: $hash})
-            SET b.height = $height,
-                b.time = $time,
-                b.size = $size,
-                b.tx_count = $tx_count
-        """, hash=block['hash'], height=block['height'],
-             time=block['time'], size=block['size'],
-             tx_count=len(block['tx']))
-
-        # Import transactions (batched)
-        for transaction in block['tx']:
-            self._import_transaction(tx, transaction, block)
 
     def import_block(self, block_height: int):
         """Import a single block into Neo4j"""

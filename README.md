@@ -1,14 +1,13 @@
 # Bitcoin Analysis Stack - Optimized Edition
 
-A **storage-optimized** Docker-based Bitcoin blockchain analysis platform that shares a single blockchain copy across all services. This version reduces storage requirements from ~1.4TB to ~900GB while maintaining full analysis capabilities.
+A **storage-optimized** Docker-based Bitcoin blockchain analysis platform that shares a single blockchain copy across all services. This version reduces storage requirements from ~2TB to ~1.5TB (25% savings) while maintaining full analysis capabilities.
 
 ## 🎯 Key Optimization Features
 
 - **Single Shared Blockchain Volume**: All services read from one Bitcoin Core instance (~600GB)
 - **Read-Only Access**: Electrs, BlockSci, and Jupyter mount blockchain as read-only
 - **Redis Caching**: GraphQL API and importer use Redis to minimize RPC calls
-- **Batch Processing**: Optimized Neo4j imports with batching and transaction pooling
-- **Compressed Neo4j Storage**: Transaction graph with optimized memory settings (~400-600GB)
+- **Batch Processing**: Optimized Neo4j imports with UNWIND queries for bulk inserts
 
 ## 📊 Storage Comparison
 
@@ -17,9 +16,11 @@ A **storage-optimized** Docker-based Bitcoin blockchain analysis platform that s
 | Bitcoin Core | 600GB | 600GB | 0GB |
 | Electrs (duplicate) | 600GB | 100GB (index only) | **-500GB** |
 | BlockSci (duplicate) | 200GB | 200GB | 0GB |
-| Neo4j Graph | 600GB | 400-600GB | 0-200GB |
+| Neo4j Graph | 600GB | 600GB | 0GB |
 | Redis Cache | 0GB | 2GB | +2GB |
-| **Total** | **~1.4TB** | **~900GB** | **~500GB saved** |
+| **Total** | **~2TB** | **~1.5TB** | **~500GB saved** |
+
+**Note**: The storage savings come entirely from the shared blockchain volume - Electrs reads from the shared volume instead of maintaining its own copy. Neo4j storage is the same in both versions.
 
 ## 🏗️ Architecture
 
@@ -59,7 +60,7 @@ A **storage-optimized** Docker-based Bitcoin blockchain analysis platform that s
 ## 📋 Requirements
 
 - **Docker** & **Docker Compose** (v2.0+)
-- **Storage**: ~900GB (600GB Bitcoin + 300GB overhead)
+- **Storage**: ~1.5TB (600GB Bitcoin + 600GB Neo4j + 300GB overhead)
 - **RAM**: 16GB minimum, 32GB recommended
 - **CPU**: 4+ cores recommended
 
@@ -354,9 +355,9 @@ bitcoin-analysis-stack-optimized/
 ## ⚠️ Limitations
 
 1. **Initial sync time**: 3-7 days for full Bitcoin blockchain
-2. **Storage**: ~900GB required (still significant but 35% less)
+2. **Storage**: ~1.5TB required (still significant but 25% less than original ~2TB)
 3. **Read-only constraint**: Services cannot modify blockchain data (by design)
-4. **Neo4j size**: Still ~6x smaller than blockchain due to relationship overhead
+4. **Neo4j size**: Still large (~600GB) due to relationship overhead
 5. **BlockSci**: Requires manual compilation
 
 ## 🔐 Security Notes
@@ -444,10 +445,10 @@ MIT License - See LICENSE file for details
 
 ## 🎓 Benefits Over Original Stack
 
-✅ **~500GB storage savings** (35% reduction)
+✅ **~500GB storage savings** (25% reduction from ~2TB to ~1.5TB)
 ✅ **70% fewer Bitcoin RPC calls** (Redis caching)
 ✅ **Faster query responses** (GraphQL caching)
-✅ **Batch processing** (60% less Neo4j write amplification)
+✅ **Batch processing** (UNWIND queries for better performance)
 ✅ **Read-only safety** (prevents blockchain corruption)
 ✅ **Horizontal scaling ready** (shared volume architecture)
 

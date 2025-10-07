@@ -328,12 +328,12 @@ class Query:
         try:
             with neo4j_driver.session() as session:
                 result = session.run("""
-                    MATCH (a1:Address {address: $address})<-[:OUTPUTS_TO]-(t:Transaction)-[:OUTPUTS_TO]->(a2:Address)
+                    MATCH (a1:Address {address: $address})<-[r1:OUTPUTS_TO]-(t:Transaction)-[r2:OUTPUTS_TO]->(a2:Address)
                     WHERE a1 <> a2
                     RETURN a1.address as from_address,
                            a2.address as to_address,
-                           sum(t.value) as total_amount,
-                           count(t) as tx_count
+                           sum(r2.value) as total_amount,
+                           count(DISTINCT t) as tx_count
                     ORDER BY tx_count DESC
                     LIMIT $limit
                 """, address=address, limit=limit)

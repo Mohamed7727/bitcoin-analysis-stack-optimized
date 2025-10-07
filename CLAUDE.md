@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Bitcoin Analysis Stack - Optimized Edition is a storage-optimized blockchain analysis platform that uses a **single shared blockchain volume** across all services. This reduces storage from ~1.4TB to ~900GB (35% savings) while maintaining full analysis capabilities through read-only mounts, Redis caching, and batch processing.
+Bitcoin Analysis Stack - Optimized Edition is a storage-optimized blockchain analysis platform that uses a **single shared blockchain volume** across all services. This reduces storage from ~2TB to ~1.5TB (25% savings) while maintaining full analysis capabilities through read-only mounts, Redis caching, and batch processing.
 
 ## Key Architecture Principle
 
@@ -214,7 +214,7 @@ bitcoin_data (600GB)         # SINGLE SHARED VOLUME
 ├── blocksci (RO)            # Reads blockchain
 └── jupyter (RO)             # Reads blockchain
 
-neo4j_data (400-600GB)       # Separate Neo4j storage
+neo4j_data (600GB)           # Separate Neo4j storage
 electrs_data (100GB)         # Electrs index only
 blocksci_data (200GB)        # BlockSci parsed data
 redis_data (2GB)             # Cache storage
@@ -373,10 +373,10 @@ docker volume rm bitcoin-analysis-stack-optimized_bitcoin_data
 
 Expected performance improvements over original stack:
 
-- **Storage**: -35% (500GB saved)
+- **Storage**: -25% (500GB saved, from ~2TB to ~1.5TB)
 - **Bitcoin RPC calls**: -70% (Redis caching)
 - **GraphQL response time**: -50% (cached queries)
-- **Neo4j import speed**: +40% (batch processing)
+- **Neo4j import speed**: +30% (UNWIND batch inserts)
 
 ## Important Notes
 
