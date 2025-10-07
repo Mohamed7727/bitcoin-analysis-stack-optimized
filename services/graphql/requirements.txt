@@ -1,0 +1,7 @@
+python-bitcoinrpc==1.0
+neo4j==5.15.0
+strawberry-graphql[fastapi]==0.216.1
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+redis==5.0.1
+python-dotenv==1.0.0

@@ -1,0 +1,53 @@
+# Bitcoin RPC and Core Libraries
+python-bitcoinrpc==1.0
+bitcoinlib==0.6.14
+
+# Neo4j Graph Database
+py2neo==2021.2.3
+neo4j==5.15.0
+
+# GraphQL Client
+gql[all]==3.5.0
+graphql-core==3.2.3
+
+# Electrum Client
+electrum==4.5.5
+
+# Graph Analysis
+networkx==3.2.1
+python-igraph==0.11.3
+
+# Data Processing
+pandas==2.2.0
+numpy==1.26.3
+scipy==1.12.0
+
+# Visualization
+matplotlib==3.8.2
+seaborn==0.13.1
+plotly==5.18.0
+pyvis==0.3.2
+
+# Async and Web
+aiohttp==3.9.1
+requests==2.31.0
+websockets==12.0
+
+# Caching
+redis==5.0.1
+
+# Utilities
+python-dotenv==1.0.0
+pyyaml==6.0.1
+tqdm==4.66.1
+click==8.1.7
+
+# Jupyter Extensions
+ipywidgets==8.1.1
+jupyter-dash==0.4.2
+jupyterlab==4.0.10
+
+# Cryptography
+ecdsa==0.18.0
+base58==2.1.1
+bech32==1.2.0

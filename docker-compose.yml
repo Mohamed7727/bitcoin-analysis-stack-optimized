@@ -1,0 +1,258 @@
+version: '3.8'
+
+services:
+  # Bitcoin Core Node - Single source of blockchain data (shared volume)
+  bitcoin:
+    image: lncm/bitcoind:v27.0
+    container_name: bitcoin_node
+    volumes:
+      - bitcoin_data:/data/.bitcoin  # SINGLE shared volume for blockchain
+      - ./config/bitcoin.conf:/data/.bitcoin/bitcoin.conf:ro
+    ports:
+      - "8332:8332"   # RPC
+      - "28332:28332" # ZMQ tx
+      - "28333:28333" # ZMQ block
+    environment:
+      - BITCOIN_DATA=/data/.bitcoin
+    restart: unless-stopped
+    networks:
+      - bitcoin-net
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-datadir=/data/.bitcoin", "getblockchaininfo"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Neo4j Graph Database - Compact storage with relationship compression
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: neo4j_graph
+    ports:
+      - "7474:7474" # HTTP Browser UI
+      - "7687:7687" # Bolt protocol
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-bitcoin123}
+      - NEO4J_dbms_memory_heap_max__size=${NEO4J_HEAP_SIZE:-4G}
+      - NEO4J_dbms_memory_pagecache_size=${NEO4J_PAGECACHE:-2G}
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*
+      - NEO4JLABS_PLUGINS=["apoc"]
+      # Compression and optimization settings
+      - NEO4J_dbms_memory_transaction_total_max=1G
+      - NEO4J_dbms_tx__log_rotation_retention__policy=1G size
+    restart: unless-stopped
+    networks:
+      - bitcoin-net
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${NEO4J_PASSWORD:-bitcoin123}", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Bitcoin to Neo4j Importer - Optimized batch processing
+  btc-importer:
+    build:
+      context: ./services/importer
+      dockerfile: Dockerfile
+    container_name: btc_importer
+    depends_on:
+      bitcoin:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/app/scripts
+      - importer_state:/app/state
+      - importer_cache:/app/cache  # Local cache to reduce RPC calls
+    environment:
+      - BITCOIN_RPC_HOST=bitcoin
+      - BITCOIN_RPC_PORT=8332
+      - BITCOIN_RPC_USER=${BITCOIN_RPC_USER:-btcuser}
+      - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD:-btcpass}
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-bitcoin123}
+      - IMPORT_START_BLOCK=${IMPORT_START_BLOCK:-0}
+      - IMPORT_BATCH_SIZE=${IMPORT_BATCH_SIZE:-100}
+      - IMPORT_MODE=${IMPORT_MODE:-continuous}
+      - ENABLE_CACHING=true
+      - CACHE_DIR=/app/cache
+    restart: unless-stopped
+    networks:
+      - bitcoin-net
+
+  # GraphQL API Server - Cached responses
+  graphql:
+    build:
+      context: ./services/graphql
+      dockerfile: Dockerfile
+    container_name: graphql_api
+    depends_on:
+      - bitcoin
+      - neo4j
+      - redis
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/graphql/schema:/app/schema
+    environment:
+      - BITCOIN_RPC_HOST=bitcoin
+      - BITCOIN_RPC_PORT=8332
+      - BITCOIN_RPC_USER=${BITCOIN_RPC_USER:-btcuser}
+      - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD:-btcpass}
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-bitcoin123}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - GRAPHQL_PORT=8000
+      - GRAPHQL_PLAYGROUND=true
+      - ENABLE_CACHE=true
+      - CACHE_TTL=300
+    restart: unless-stopped
+    networks:
+      - bitcoin-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Electrs - Reads from SHARED Bitcoin volume (read-only)
+  electrs:
+    image: getumbrel/electrs:v0.10.5
+    container_name: electrs_indexer
+    depends_on:
+      bitcoin:
+        condition: service_healthy
+    volumes:
+      - bitcoin_data:/bitcoin:ro  # SHARED read-only access to Bitcoin data
+      - electrs_data:/data        # Only index data stored separately
+    ports:
+      - "50001:50001"
+    environment:
+      - ELECTRS_LOG_FILTERS=info
+      - ELECTRS_DAEMON_RPC_ADDR=bitcoin:8332
+      - ELECTRS_DAEMON_P2P_ADDR=bitcoin:8333
+      - ELECTRS_ELECTRUM_RPC_ADDR=0.0.0.0:50001
+      - ELECTRS_MONITORING_ADDR=0.0.0.0:4224
+      - ELECTRS_DB_DIR=/data
+      - ELECTRS_DAEMON_DIR=/bitcoin/.bitcoin  # Points to shared volume
+    restart: unless-stopped
+    networks:
+      - bitcoin-net
+
+  # BlockSci - Reads from SHARED Bitcoin volume (read-only)
+  blocksci:
+    build:
+      context: ./services/blocksci
+      dockerfile: Dockerfile
+    container_name: blocksci_engine
+    depends_on:
+      - bitcoin
+    volumes:
+      - blocksci_data:/data/blocksci
+      - bitcoin_data:/data/bitcoin:ro  # SHARED read-only access
+      - ./scripts:/app/scripts
+    environment:
+      - BITCOIN_RPC_HOST=bitcoin
+      - BITCOIN_RPC_PORT=8332
+      - BITCOIN_RPC_USER=${BITCOIN_RPC_USER:-btcuser}
+      - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD:-btcpass}
+      - BLOCKSCI_DATA_DIR=/data/blocksci
+      - BITCOIN_DATA_DIR=/data/bitcoin/.bitcoin  # Points to shared volume
+    restart: unless-stopped
+    networks:
+      - bitcoin-net
+    command: tail -f /dev/null
+
+  # Jupyter Notebook - Interactive Analysis
+  jupyter:
+    image: jupyter/scipy-notebook:latest
+    container_name: analysis_notebook
+    depends_on:
+      - bitcoin
+      - neo4j
+      - graphql
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./scripts:/home/jovyan/scripts:ro
+      - blocksci_data:/data/blocksci:ro
+      - bitcoin_data:/data/bitcoin:ro  # SHARED read-only access
+      - ./requirements.txt:/tmp/requirements.txt:ro
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - BITCOIN_RPC_HOST=bitcoin
+      - BITCOIN_RPC_PORT=8332
+      - BITCOIN_RPC_USER=${BITCOIN_RPC_USER:-btcuser}
+      - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD:-btcpass}
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-bitcoin123}
+      - GRAPHQL_ENDPOINT=http://graphql:8000/graphql
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    user: root
+    command: >
+      bash -c "pip install -r /tmp/requirements.txt &&
+               chown -R jovyan:users /home/jovyan/work &&
+               su jovyan -c 'start-notebook.sh --NotebookApp.token=\"\" --NotebookApp.password=\"\"'"
+    restart: unless-stopped
+    networks:
+      - bitcoin-net
+
+  # Redis - Caching layer for GraphQL and analysis
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    networks:
+      - bitcoin-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  # SINGLE shared Bitcoin blockchain volume (~600GB)
+  bitcoin_data:
+    driver: local
+
+  # Neo4j data (optimized, ~400-600GB with compression)
+  neo4j_data:
+    driver: local
+  neo4j_logs:
+    driver: local
+  neo4j_import:
+    driver: local
+  neo4j_plugins:
+    driver: local
+
+  # Service-specific volumes (minimal overhead)
+  electrs_data:
+    driver: local    # Index only (~100GB)
+  blocksci_data:
+    driver: local    # Processed data (~200GB)
+  redis_data:
+    driver: local    # Cache (~2GB)
+  importer_state:
+    driver: local    # State files (~1MB)
+  importer_cache:
+    driver: local    # Local cache (~10GB)
+
+networks:
+  bitcoin-net:
+    driver: bridge
